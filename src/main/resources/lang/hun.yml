@@ -1,0 +1,6 @@
+player-protected: "&aVédett vagy a PvP ellen %time% másodpercig."
+protection-expired: "&cA PvP védelem lejárt."
+target-protected: "&e%player% &cjelenleg védett a PvP ellen."
+
+
+FileVersion: 1
