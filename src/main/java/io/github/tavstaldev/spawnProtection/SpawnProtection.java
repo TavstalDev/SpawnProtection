@@ -5,33 +5,21 @@ import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.flags.registry.FlagConflictException;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
 import io.github.tavstaldev.minecorelib.PluginBase;
-import io.github.tavstaldev.minecorelib.core.PluginLogger;
 import io.github.tavstaldev.minecorelib.core.PluginTranslator;
 import io.github.tavstaldev.minecorelib.utils.VersionUtils;
 import io.github.tavstaldev.spawnProtection.events.PlayerEventListener;
+import io.github.tavstaldev.spawnProtection.tasks.CacheCleanTask;
 import org.bukkit.Bukkit;
 
-import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public final class SpawnProtection extends PluginBase {
     public static SpawnProtection Instance;
-    public static PluginLogger Logger() {
-        return Instance.getCustomLogger();
-    }
-    public static PluginTranslator Translator() {
-        return Instance.getTranslator();
-    }
     public static StateFlag EnableSpawnProtectionFlag;
-    private Map<UUID, LocalDateTime> protectedPlayers;
-    public Map <UUID, LocalDateTime> getProtectedPlayers() {
-        return protectedPlayers;
-    }
+    private CacheCleanTask cacheCleanTask; // Task for cleaning player caches.
 
     public SpawnProtection() {
         super(false, "https://github.com/TavstalDev/SpawnProtection/releases/latest");
-        protectedPlayers = new java.util.HashMap<>();
     }
 
     @Override
@@ -39,22 +27,22 @@ public final class SpawnProtection extends PluginBase {
         Instance = this;
         _config = new SPConfiguration();
         _translator = new PluginTranslator(this, new String[]{"hun"});
-        _logger.Info(String.format("Loading %s...", getProjectName()));
+        _logger.info(String.format("Loading %s...", getProjectName()));
 
         if (VersionUtils.isLegacy()) {
-            _logger.Error("The plugin is not compatible with legacy versions of Minecraft. Please use a newer version of the game.");
+            _logger.error("The plugin is not compatible with legacy versions of Minecraft. Please use a newer version of the game.");
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
 
         // Check for WorldGuard
         if (Bukkit.getPluginManager().getPlugin("WorldGuard") == null) {
-            _logger.Error("WorldGuard plugin not found! This plugin requires WorldGuard to function properly. Unloading...");
+            _logger.error("WorldGuard plugin not found! This plugin requires WorldGuard to function properly. Unloading...");
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
         else {
-            _logger.Ok("WorldGuard plugin found and hooked into it.");
+            _logger.ok("WorldGuard plugin found and hooked into it.");
         }
 
         // Register Events
@@ -64,14 +52,27 @@ public final class SpawnProtection extends PluginBase {
         saveDefaultConfig();
 
         // Load Localizations
-        if (!_translator.Load())
+        if (!_translator.load())
         {
-            _logger.Error("Failed to load localizations... Unloading...");
+            _logger.error("Failed to load localizations... Unloading...");
             Bukkit.getPluginManager().disablePlugin(this);
             return;
         }
 
-        _logger.Ok(String.format("%s has been successfully loaded.", getProjectName()));
+        // Register cache cleanup task.
+        if (cacheCleanTask != null && !cacheCleanTask.isCancelled())
+            cacheCleanTask.cancel();
+        cacheCleanTask = new CacheCleanTask(); // Runs every 5 minutes
+        cacheCleanTask.runTaskTimer(this, 0, 5 * 60 * 20);
+
+        _logger.ok(String.format("%s has been successfully loaded.", getProjectName()));
+    }
+
+    @Override
+    public void onDisable() {
+        if (cacheCleanTask != null && !cacheCleanTask.isCancelled())
+            cacheCleanTask.cancel();
+        _logger.info(String.format("%s has been successfully unloaded.", getProjectName()));
     }
 
     @Override
@@ -82,9 +83,8 @@ public final class SpawnProtection extends PluginBase {
             registry.register(flag);
             EnableSpawnProtectionFlag = flag;
         } catch (FlagConflictException e) {
-            _logger.Error("Failed to register flags! Unloading...");
+            _logger.error("Failed to register flags! Unloading...");
             Bukkit.getPluginManager().disablePlugin(this);
-            return;
         }
     }
 }
