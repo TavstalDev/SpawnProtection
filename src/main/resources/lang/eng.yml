@@ -1,0 +1,6 @@
+player-protected: "&aYou are protected against pvp for %time% seconds."
+protection-expired: "&cYour pvp protection has expired."
+target-protected: "&e%player% &cis under pvp protection."
+
+
+FileVersion: 1

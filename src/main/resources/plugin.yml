@@ -1,7 +1,8 @@
-name: SpawnProtection
-version: '1.1.0'
 main: io.github.tavstaldev.spawnProtection.SpawnProtection
+version: '1.1.0'
 api-version: '1.21'
+
+name: SpawnProtection
 prefix: SpawnProtection
 authors: [ Tavstal ]
 description: Simple spawn protection plugin
