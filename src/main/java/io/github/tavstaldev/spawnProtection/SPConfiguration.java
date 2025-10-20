@@ -10,13 +10,17 @@ public class SPConfiguration extends ConfigurationBase {
     public String prefix;
     public boolean checkForUpdates, debug;
 
+    public int protectionDuration;
+
     @Override
     protected void loadDefaults() {
         // General
-        resolve("locale", "hun");
-        resolve("usePlayerLocale", false);
-        checkForUpdates = resolveGet("checkForUpdates", false);
+        resolve("locale", "eng");
+        resolve("usePlayerLocale", true);
+        checkForUpdates = resolveGet("checkForUpdates", true);
         debug = resolveGet("debug", false);
         prefix = resolveGet("prefix", "&bSpawn&3Protection &8»");
+
+        protectionDuration = resolveGet("protectionDuration", 3);
     }
 }
