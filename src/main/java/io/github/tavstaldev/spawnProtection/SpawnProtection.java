@@ -88,7 +88,7 @@ public final class SpawnProtection extends PluginBase {
 
         // Metrics
         try {
-            @SuppressWarnings("unused") Metrics metrics = new Metrics(this, 27760);
+            @SuppressWarnings("unused") Metrics metrics = new Metrics(this, 27771);
         }
         catch (Exception ex)
         {
