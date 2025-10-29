@@ -8,6 +8,7 @@ import io.github.tavstaldev.minecorelib.PluginBase;
 import io.github.tavstaldev.minecorelib.core.PluginTranslator;
 import io.github.tavstaldev.minecorelib.utils.VersionUtils;
 import io.github.tavstaldev.spawnProtection.events.PlayerEventListener;
+import io.github.tavstaldev.spawnProtection.metrics.Metrics;
 import io.github.tavstaldev.spawnProtection.tasks.CacheCleanTask;
 import org.bukkit.Bukkit;
 
@@ -49,7 +50,8 @@ public final class SpawnProtection extends PluginBase {
 
         // Load configuration and translator.
         _config = new SPConfiguration();
-        _translator = new PluginTranslator(this, new String[]{"hun"});
+        _config.load();
+        _translator = new PluginTranslator(this, new String[]{"eng", "hun"});
         _logger.info(String.format("Loading %s...", getProjectName()));
 
         // Check if the Minecraft version is supported.
@@ -71,9 +73,6 @@ public final class SpawnProtection extends PluginBase {
         // Register event listeners.
         PlayerEventListener.init();
 
-        // Generate the default configuration file.
-        saveDefaultConfig();
-
         // Load localization files.
         if (!_translator.load()) {
             _logger.error("Failed to load localizations... Unloading...");
@@ -87,7 +86,28 @@ public final class SpawnProtection extends PluginBase {
         cacheCleanTask = new CacheCleanTask(); // Runs every 5 minutes.
         cacheCleanTask.runTaskTimer(this, 0, 5 * 60 * 20);
 
+        // Metrics
+        try {
+            @SuppressWarnings("unused") Metrics metrics = new Metrics(this, 27760);
+        }
+        catch (Exception ex)
+        {
+            _logger.error("Failed to start Metrics: " + ex.getMessage());
+        }
+
         _logger.ok(String.format("%s has been successfully loaded.", getProjectName()));
+        if (config().checkForUpdates) {
+            isUpToDate().thenAccept(upToDate -> {
+                if (upToDate) {
+                    _logger.ok("Plugin is up to date!");
+                } else {
+                    _logger.warn("A new version of the plugin is available: " + getDownloadUrl());
+                }
+            }).exceptionally(e -> {
+                _logger.error("Failed to determine update status: " + e.getMessage());
+                return null;
+            });
+        }
     }
 
     /**

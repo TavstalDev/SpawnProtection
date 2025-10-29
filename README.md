@@ -9,6 +9,12 @@
 ## Description
 Simple spawn protection plugin to prevent spawn killing. Ideal for skypvp and kitpvp servers.
 
+## Dependencies
+- [WorldGuard](https://dev.bukkit.org/projects/worldguard) - Required for region management and protection features.
+
+## How to use
+After installing the plugin, you can enable spawn protection for a region by allowing the `spawn-protection-enabled` flag.
+
 ## Contributing
 
 I welcome contributions! If you have ideas for features, bug fixes, or improvements, please consider contributing to the project.
