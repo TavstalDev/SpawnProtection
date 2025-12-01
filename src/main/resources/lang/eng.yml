@@ -1,6 +1,14 @@
-player-protected: "&aYou are protected against pvp for %time% seconds."
+player-protected: "&aYou are protected against pvp for &f%time%&a."
 protection-expired: "&cYour pvp protection has expired."
 target-protected: "&e%player% &cis under pvp protection."
+you-are-protected: "&cYou cannot attack players while you are protected."
+action-bar-protected: "&aYou are protected for &f%time%."
+action-bar-unprotected: "&cYou are no longer protected."
 
+time:
+  days: "%time% days"
+  hours: "%time% hours"
+  minutes: "%time% minutes"
+  seconds: "%time% seconds"
 
-FileVersion: 1
+FileVersion: 2

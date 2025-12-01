@@ -1,6 +1,14 @@
-player-protected: "&aVédett vagy a PvP ellen %time% másodpercig."
+player-protected: "&aVédett vagy a PvP ellen eddig: &f%time%&a."
 protection-expired: "&cA PvP védelem lejárt."
 target-protected: "&e%player% &cjelenleg védett a PvP ellen."
+you-are-protected: "&cNem támadhatsz játékosokat, amíg védett vagy."
+action-bar-protected: "&aVédelmed lejár &f%time%&a múlva."
+action-bar-unprotected: "&cMár nem vagy védett."
 
+time:
+  days: "%time% nap"
+  hours: "%time% óra"
+  minutes: "%time% perc"
+  seconds: "%time% másodperc"
 
-FileVersion: 1
+FileVersion: 2
