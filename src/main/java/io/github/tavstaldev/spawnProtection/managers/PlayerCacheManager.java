@@ -12,7 +12,7 @@ import java.util.*;
  */
 public class PlayerCacheManager {
     // Map to store player protections with their expiration times.
-    private static final Map<UUID, LocalDateTime> _protections = new HashMap<>();
+    private static final Map<UUID, Long> _protections = new HashMap<>();
     // Set to store players who are currently teleporting.
     private static final Set<UUID> _teleportingPlayers = new HashSet<>();
     // Set to store players marked for removal.
@@ -26,7 +26,7 @@ public class PlayerCacheManager {
      * @param playerId The UUID of the player.
      * @param time The expiration time of the protection.
      */
-    public static void setProtection(UUID playerId, LocalDateTime time) {
+    public static void setProtection(UUID playerId, long time) {
         _protections.put(playerId, time);
     }
 
@@ -46,11 +46,22 @@ public class PlayerCacheManager {
      * @return True if the player is protected, false if not, or null if no protection is set.
      */
     public static @Nullable Boolean isProtected(UUID playerId) {
-        LocalDateTime cooldownTime = _protections.get(playerId);
-        if (cooldownTime == null) {
-            return null; // No cooldown set for this player
-        }
-        return LocalDateTime.now().isBefore(cooldownTime); // Check if current time is before the cooldown time
+        if (!_protections.containsKey(playerId))
+            return null;
+
+        long cooldownTime = _protections.get(playerId);
+        var currentTime = System.currentTimeMillis();
+        return currentTime < cooldownTime; // Check if current time is before the cooldown time
+    }
+
+    /**
+     * Retrieves a copy of the map containing player protections and their expiration times.
+     * This method ensures that the original map remains unmodifiable by external callers.
+     *
+     * @return A new map containing the UUIDs of players as keys and their protection expiration times as values.
+     */
+    public static Map<UUID, Long> getProtections() {
+        return new HashMap<>(_protections);
     }
     //#endregion
 

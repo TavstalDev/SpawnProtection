@@ -9,6 +9,7 @@ import io.github.tavstaldev.minecorelib.core.PluginTranslator;
 import io.github.tavstaldev.minecorelib.utils.VersionUtils;
 import io.github.tavstaldev.spawnProtection.events.PlayerEventListener;
 import io.github.tavstaldev.spawnProtection.metrics.Metrics;
+import io.github.tavstaldev.spawnProtection.tasks.ActionBarTask;
 import io.github.tavstaldev.spawnProtection.tasks.CacheCleanTask;
 import org.bukkit.Bukkit;
 
@@ -27,6 +28,7 @@ public final class SpawnProtection extends PluginBase {
 
     // Task for cleaning player caches periodically.
     private CacheCleanTask cacheCleanTask;
+    private ActionBarTask actionBarTask;
 
     public static SPConfiguration config() {
         return (SPConfiguration)Instance._config;
@@ -85,6 +87,11 @@ public final class SpawnProtection extends PluginBase {
             cacheCleanTask.cancel();
         cacheCleanTask = new CacheCleanTask(); // Runs every 5 minutes.
         cacheCleanTask.runTaskTimer(this, 0, 5 * 60 * 20);
+
+        if (actionBarTask != null && !actionBarTask.isCancelled())
+            actionBarTask.cancel();
+        actionBarTask = new ActionBarTask(); // Runs every second.
+        actionBarTask.runTaskTimer(this, 20L, 20L);
 
         // Metrics
         try {

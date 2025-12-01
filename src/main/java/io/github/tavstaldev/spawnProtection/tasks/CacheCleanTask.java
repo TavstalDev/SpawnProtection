@@ -25,7 +25,7 @@ public class CacheCleanTask extends BukkitRunnable {
         for (var playerId : PlayerCacheManager.getMarkedForRemovalSet()) {
             // Check if the player is protected. Skip if the player is protected or the protection status is null.
             var protection = PlayerCacheManager.isProtected(playerId);
-            if (protection == null || protection)
+            if (protection != null && protection)
                 continue;
 
             // Remove the player's protection status.

@@ -8,20 +8,20 @@ import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
 import io.github.tavstaldev.spawnProtection.SpawnProtection;
 import io.github.tavstaldev.spawnProtection.managers.PlayerCacheManager;
+import io.github.tavstaldev.spawnProtection.utils.TimeUtil;
 import io.github.tavstaldev.spawnProtection.utils.VanishUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
@@ -62,12 +62,9 @@ public class PlayerEventListener implements Listener {
         }
 
         var isUnderProtection = PlayerCacheManager.isProtected(playerId);
-        if (isUnderProtection != null) {
-            if (isUnderProtection)
-                return;
-
-            PlayerCacheManager.removeProtection(playerId);
-            SpawnProtection.Instance.sendLocalizedMsg(player, "protection-expired");
+        if (isUnderProtection != null && !isUnderProtection) {
+            // Protection has expired, return
+            return;
         }
 
         RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
@@ -83,9 +80,12 @@ public class PlayerEventListener implements Listener {
             return;
 
         // Apply spawn protection for x seconds
-        int seconds = SpawnProtection.config().protectionDuration;
-        PlayerCacheManager.setProtection(player.getUniqueId(), LocalDateTime.now().plusSeconds(seconds));
-        SpawnProtection.Instance.sendLocalizedMsg(player, "player-protected", Map.of("time", String.valueOf(seconds)));
+        long milisec = SpawnProtection.config().protectionDuration * 1000L;
+        var currentTime = System.currentTimeMillis();
+        PlayerCacheManager.setProtection(player.getUniqueId(), currentTime + milisec);
+        if (isUnderProtection != null) // Prevent spamming the message
+            return;
+        SpawnProtection.Instance.sendLocalizedMsg(player, "player-protected", Map.of("time", TimeUtil.formatDate(player, milisec)));
     }
 
     /**
@@ -99,30 +99,60 @@ public class PlayerEventListener implements Listener {
     }
 
     /**
-     * Handles the EntityDamageEvent to cancel damage for protected players.
+     * Handles the EntityDamageByEntityEvent to manage spawn protection logic during player interactions.
+     * This method ensures that protected players cannot be damaged and notifies the involved entities accordingly.
      *
-     * @param event The EntityDamageEvent triggered when an entity takes damage.
+     * @param event The EntityDamageByEntityEvent triggered when an entity damages another entity.
      */
-    @EventHandler
-    public void onPlayerDamage(EntityDamageEvent event) {
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onPlayerEntityDamage(EntityDamageByEntityEvent event) {
+        // Exit if the event is already cancelled
+        if (event.isCancelled())
+            return;
+
+        // Exit if the damaged entity is not a player
         if (!(event.getEntity() instanceof Player player))
             return;
 
+        // Check if the damaged player is under protection
         var isProtected = PlayerCacheManager.isProtected(player.getUniqueId());
+
+        // Handle non-player damagers
+        if (!(event.getDamager() instanceof Player damager)) {
+            // Remove protection if it has expired
+            if (isProtected != null && !isProtected) {
+                PlayerCacheManager.removeProtection(player.getUniqueId());
+                return;
+            }
+            // Cancel the event to prevent damage
+            event.setCancelled(true);
+            return;
+        }
+
+        // Exit if the damager is the same as the damaged player
+        if (damager.equals(player))
+            return;
+
+        // Check if the damager is under protection
+        var isDamagerProtected = PlayerCacheManager.isProtected(damager.getUniqueId());
+        if (isDamagerProtected != null && isDamagerProtected) {
+            // Notify the damager that they are protected and cancel the event
+            SpawnProtection.Instance.sendLocalizedMsg(damager, "you-are-protected");
+            event.setCancelled(true);
+            return;
+        }
+
         if (isProtected == null)
             return;
 
+        // Remove protection from the damaged player if it has expired
         if (!isProtected) {
             PlayerCacheManager.removeProtection(player.getUniqueId());
             return;
         }
 
+        // Cancel the event to prevent damage to the protected player
         event.setCancelled(true);
-        if (!(event instanceof EntityDamageByEntityEvent damageByEntityEvent))
-            return;
-
-        if (!(damageByEntityEvent.getDamager() instanceof Player damager))
-            return;
 
         // Notify the damager that the target is protected
         SpawnProtection.Instance.sendLocalizedMsg(damager, "target-protected", Map.of("player", player.getName()));
