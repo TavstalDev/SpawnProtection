@@ -13,6 +13,7 @@ import io.github.tavstaldev.spawnProtection.utils.VanishUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -112,15 +113,42 @@ public class PlayerEventListener implements Listener {
 
         // Exit if the damaged entity is not a player
         if (!(event.getEntity() instanceof Player player))
+        {
+            if (!(event.getDamager() instanceof Player damager))
+                return;
+            var isProtected = PlayerCacheManager.isProtected(damager.getUniqueId());
+            if (isProtected == null)
+                return;
+
+            if (!isProtected) {
+                PlayerCacheManager.removeProtection(damager.getUniqueId());
+                return;
+            }
+            // Cancel the event to prevent damage
+            event.setCancelled(true);
             return;
+        }
 
         // Check if the damaged player is under protection
         var isProtected = PlayerCacheManager.isProtected(player.getUniqueId());
 
         // Handle non-player damagers
-        if (!(event.getDamager() instanceof Player damager)) {
+        Player damager = null;
+        if (event.getDamager() instanceof Player p) {
+            damager = p;
+        }
+        else if (event.getDamager() instanceof Projectile projectile) {
+            if (projectile.getShooter() instanceof Player p) {
+                damager = p;
+            }
+        }
+
+        if (damager == null) {
             // Remove protection if it has expired
-            if (isProtected != null && !isProtected) {
+            if (isProtected == null)
+                return;
+
+            if (!isProtected) {
                 PlayerCacheManager.removeProtection(player.getUniqueId());
                 return;
             }
